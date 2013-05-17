@@ -10,6 +10,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class AlwaysSpawn extends JavaPlugin implements Listener {
@@ -23,22 +24,21 @@ public class AlwaysSpawn extends JavaPlugin implements Listener {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        Player p = ((Player)sender);
+        Player p = ((Player) sender);
         if (cmd.getName().equalsIgnoreCase("alwaysspawn") && p.hasPermission("alwaysspawn.set")) {
-            if(getConfig().getString("Location.x") != null)
-                getConfig().set("Location", null);
-            getConfig().addDefault("Location.world", p.getLocation().getWorld());
-            getConfig().addDefault("Location.x", p.getLocation().getX());
-            getConfig().addDefault("Location.y", p.getLocation().getY());
-            getConfig().addDefault("Location.z", p.getLocation().getZ());
-            getConfig().addDefault("Location.pitch", p.getLocation().getPitch());
-            getConfig().addDefault("Location.yaw", p.getLocation().getYaw());
+            getConfig().set("Location.world", p.getLocation().getWorld().getName());
+            getConfig().set("Location.x", p.getLocation().getX());
+            getConfig().set("Location.y", p.getLocation().getY());
+            getConfig().set("Location.z", p.getLocation().getZ());
+            getConfig().set("Location.pitch", p.getLocation().getPitch());
+            getConfig().set("Location.yaw", p.getLocation().getYaw());
             saveConfig();
             p.sendMessage(t("Set the AlwaysSpawn!"));
             return true;
         }
         return false;
     }
+
     @EventHandler
     public void onPlayerJoin(final PlayerJoinEvent event) {
         tp(event.getPlayer());
@@ -50,18 +50,29 @@ public class AlwaysSpawn extends JavaPlugin implements Listener {
             tp(event.getEntity());
     }
 
+    @EventHandler
+    public void onPlayerRespawn(final PlayerRespawnEvent event) {
+        if (event.getPlayer() instanceof Player)
+            tp(event.getPlayer());
+    }
+
     void tp(final Player p) {
         if (getConfig().getString("Location.x") != null) {
-            final float yaw = getConfig().getInt("Location.yaw");
-            final float pitch = getConfig().getInt("Location.pitch");
             final Location loc = new Location(Bukkit.getWorld(getConfig().getString("Location.world")), getConfig()
-                    .getInt("Location.x"), getConfig().getInt("Location.y"), getConfig().getInt("Location.z"), pitch,
-                    yaw);
-            if (!p.hasPermission("alwaysspawn.bypass"))
-                p.teleport(loc);
+                    .getInt("Location.x"), getConfig().getInt("Location.y"), getConfig().getInt("Location.z"),
+                    getConfig().getInt("Location.pitch"), getConfig().getInt("Location.yaw"));
+            if (!p.hasPermission("alwaysspawn.bypass")) {
+                getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+                    @Override
+                    public void run() {
+                        p.teleport(loc);
+                    }
+                }, 1);
+            }
         }
     }
-    String t(String msg){
+
+    String t(String msg) {
         return ChatColor.translateAlternateColorCodes('&', "&7" + msg);
     }
 }
