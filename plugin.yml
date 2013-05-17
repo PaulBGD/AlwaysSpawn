@@ -1,0 +1,10 @@
+name: AlwaysSpawn
+version: 0.9.0
+description: Always teleport your users to spawn!
+author: Ultimate 
+main: me.ultimate.AS.AlwaysSpawn
+
+commands:
+  alwaysspawn:
+    description: Set the always spawn
+    usage: /<command>
